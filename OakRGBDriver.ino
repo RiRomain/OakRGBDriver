@@ -8,12 +8,14 @@ int ledPin = 1;       // choose the pin for the status LED
 //int pinVal = 0;       // variable for reading the pin status
 
 int redLedPin = 6;    //choose the pin for the RED LED
-int greenLedPin = 7;  //choose the pin for the RED GREEN
-int blueLedPin = 8;   //choose the pin for the RED BLUE
+int greenLedPin = 7;  //choose the pin for the GREEN LED
+int blueLedPin = 8;   //choose the pin for the BLUE LED
+int whiteLedPin = 9;  //choose the pin for the WHITE LED
 
 int redValue = 0;
 int greenValue = 0;
 int blueValue = 0;
+int whiteValue = 0;
 int intensity = 0;
 int maxIntensity = 1023;
 
@@ -32,6 +34,7 @@ void setPresetValueToOutput() {
   analogWrite(redLedPin, getValueWithAppliedIntensity(redValue));
   analogWrite(greenLedPin, getValueWithAppliedIntensity(greenValue));
   analogWrite(blueLedPin, getValueWithAppliedIntensity(blueValue));
+  analogWrite(whiteLedPin, getValueWithAppliedIntensity(whiteValue));
 }
 
 void turnAllLedOff() {
@@ -39,6 +42,7 @@ void turnAllLedOff() {
   analogWrite(redLedPin, 0);
   analogWrite(greenLedPin, 0);
   analogWrite(blueLedPin, 0);
+  analogWrite(whiteLedPin, 0);
 }
 
 int ledToggleFunction(String command) {
@@ -69,12 +73,13 @@ int setIntensity(String command) {
 }
 
 int setValue(String command) {
-  if (command.length() != 9) {
+  if (command.length() != 12) {
     return -1;
   }
   redValue = stringToInt(0, 3, command);
   greenValue = stringToInt(3, 6, command);
   blueValue = stringToInt(6, 9, command);
+  whiteValue = stringToInt(9, 12, command);
   setPresetValueToOutput();
   return 1;
 }
@@ -84,6 +89,8 @@ void setup() {
   pinMode(redLedPin, OUTPUT);     // Initialize the RGB_RED_LED pin as an output
   pinMode(greenLedPin, OUTPUT);   // Initialize the RGB_GREEN_LED pin as an output
   pinMode(blueLedPin, OUTPUT);    // Initialize the RGB_BLUE_LED pin as an output
+  pinMode(whiteLedPin, OUTPUT);   // Initialize the RGB_WHITE_LED pin as an output
+  
   //pinMode(inPin, INPUT);          //Initialize the input push button
   Particle.function("led", ledToggleFunction);
   Particle.function("value", setValue);
@@ -91,6 +98,7 @@ void setup() {
   Particle.variable("red", redValue);
   Particle.variable("green", greenValue);
   Particle.variable("blue", blueValue);
+  Particle.variable("white", whiteValue);
   Particle.variable("inten", intensity);
   setPresetValueToOutput();
 }
