@@ -48,7 +48,7 @@ int getValueWithAppliedIntensity(int baseValue) {
 }
 
 void setPresetValueToOutput() {
-  analogWrite(ledPin, getValueWithAppliedIntensity(redValue));
+  analogWrite(ledPin, getValueWithAppliedIntensity(intensity));
   analogWrite(redLedPin, getValueWithAppliedIntensity(redValue));
   analogWrite(greenLedPin, getValueWithAppliedIntensity(greenValue));
   analogWrite(blueLedPin, getValueWithAppliedIntensity(blueValue));
