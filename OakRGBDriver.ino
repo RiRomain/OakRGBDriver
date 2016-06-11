@@ -10,9 +10,9 @@
 int ledPin = 1;       // choose the pin for the status LED (Oak on-board LED)
 int pushButtonInputPin = 10;   // choose the input pin (for a pushbutton)
 
-int redLedPin = 6;    //choose the pin for the RED LED channel
+int redLedPin = 8;    //choose the pin for the RED LED channel
 int greenLedPin = 7;  //choose the pin for the GREEN LED channel
-int blueLedPin = 8;   //choose the pin for the BLUE LED channel
+int blueLedPin = 6;   //choose the pin for the BLUE LED channel
 int whiteLedPin = 9;  //choose the pin for the WHITE LED channel
 
 
@@ -46,6 +46,18 @@ int getValueWithAppliedIntensity(int baseValue) {
 }
 
 /*
+ * Output value calculation
+ * @Return: baseValue with applied maxIntensity
+ * @Param baseValue: value between 0 and 255
+ */
+int getWhiteValue(int baseValue) {
+  if (0 == baseValue) {
+    return 0;
+  }
+  return (baseValue*maxIntensity)/255;
+}
+
+/*
  * Turn on all the led to the actual set value
  */
 void setPresetValueToOutput() {
@@ -53,7 +65,7 @@ void setPresetValueToOutput() {
   analogWrite(redLedPin, getValueWithAppliedIntensity(redValue));
   analogWrite(greenLedPin, getValueWithAppliedIntensity(greenValue));
   analogWrite(blueLedPin, getValueWithAppliedIntensity(blueValue));
-  analogWrite(whiteLedPin, getValueWithAppliedIntensity(whiteValue));
+  analogWrite(whiteLedPin, getWhiteValue(whiteValue));
 }
 
 /*
@@ -83,6 +95,15 @@ int ledToggleFunction(String command) {
     else if (command=="off") {
         turnAllLedOff();
         ledAreOn = false;
+        return 1;
+    }
+    else if (command=="pushOn") {
+      if (0 == intensity) {
+            analogWrite(whiteLedPin, getWhiteValue(200));
+        } else {
+            setPresetValueToOutput();
+        }
+        ledAreOn = true;
         return 1;
     }
     else {
@@ -171,7 +192,7 @@ void loop() {
             if (ledAreOn) {
               ledToggleFunction("off");
             } else {
-              ledToggleFunction("on");
+              ledToggleFunction("pushOn");
             }
         }
         lastPushButtonValue = pushButtonValue;
