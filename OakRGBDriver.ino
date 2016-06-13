@@ -91,16 +91,13 @@ int ledToggleFunction(String command) {
         return 1;
     }
     else if (command=="off") {
+        whiteValue = 0;
         turnAllLedOff();
         return 1;
     }
     else if (command=="pushOn") {
-      if (0 == intensity) {
-            whiteValue=200;
-            analogWrite(whiteLedPin, getWhiteValue(whiteValue));
-        } else {
-            setPresetValueToOutput();
-        }
+      whiteValue = 200;
+        analogWrite(whiteLedPin, getWhiteValue(whiteValue));
         return 1;
     }
     else {
@@ -169,6 +166,7 @@ void setup() {
   Particle.variable("white", whiteValue);       // "white" variable representing the white led value (on 255)
   Particle.variable("inten", intensity);        // "inten" variable representing the led intensity (on 255)
   setPresetValueToOutput();
+  lastPushButtonValue = digitalRead(pushButtonInputPin);
 }
 
 //Time storage is preffered over pause function to create a delay, avoiding by this way to slow down the rest of the execution
@@ -192,14 +190,12 @@ void loop() {
         pushLoopCount = pushLoopCount + 1;
     }
 
-    if ((pushButtonValue == HIGH) && (pushLoopCount <= numberOfLoopBeforeLedValueToogle)) { //Button just released and was in the previous status for less than 3 loop 
+    if ((pushButtonValue == HIGH) && (pushLoopCount <= numberOfLoopBeforeLedValueToogle) && (pushButtonValue != lastPushButtonValue)) { //Button just released and was in the previous status for less than 3 loop 
         if (whiteValue!= 0) {
-          whiteValue == 0;
           ledToggleFunction("off");
         } else {
           ledToggleFunction("pushOn");
         }
-        Particle.publish("bla");
     }
     
     if (pushLoopCount > numberOfLoopBeforeLedValueToogle) { // pressed for more than numberOfLoopBeforeLedValueToogle cycle, toogle color
