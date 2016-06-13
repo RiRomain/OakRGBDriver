@@ -23,12 +23,11 @@ int redValue = 0;
 int greenValue = 0;
 int blueValue = 0;
 int whiteValue = 0;
-int intensity = 0;
+int intensity = 200;      //Start with an intensity of 200 to avoid having to reset it on power loss.
 int maxIntensity = 1023;  //Max output for the PWM, 
 
 int pushButtonValue = 0;       // variable for the actual push button status
 int lastPushButtonValue = 0;   // variable for the previous push button value
-boolean ledAreOn = false;
 
 /*
  * Output value calculation
@@ -89,21 +88,19 @@ void turnAllLedOff() {
 int ledToggleFunction(String command) {
   if (command=="on") {
         setPresetValueToOutput();
-        ledAreOn = true;
         return 1;
     }
     else if (command=="off") {
         turnAllLedOff();
-        ledAreOn = false;
         return 1;
     }
     else if (command=="pushOn") {
       if (0 == intensity) {
-            analogWrite(whiteLedPin, getWhiteValue(200));
+            whiteValue=200;
+            analogWrite(whiteLedPin, getWhiteValue(whiteValue));
         } else {
             setPresetValueToOutput();
         }
-        ledAreOn = true;
         return 1;
     }
     else {
@@ -177,7 +174,8 @@ void setup() {
 //Time storage is preffered over pause function to create a delay, avoiding by this way to slow down the rest of the execution
 unsigned long previousLoopMillis = 0;     // Storage of the last time the push button value was read
 const long buttonReadingInterval = 100; // Delay between 2 push button read value, button will have to be pressed at most 100mS to react
-const long numberOfLoopBeforeWifiSetup = 100; //represent 10 secondes, after which the Oak will go in wifi config mode
+const long numberOfLoopBeforeLedValueToogle = 3; // represent 300mS, after that the Oak will start to go through all available color
+const long numberOfLoopBeforeWifiSetup = 1000; //represent 100 secondes, after which the Oak will go in wifi config mode
 unsigned long pushLoopCount = 0;
 
 // the loop function runs over and over again forever
@@ -185,29 +183,86 @@ void loop() {
   unsigned long currentMillis = millis();
   if (currentMillis - previousLoopMillis >= buttonReadingInterval) {
     // save the last time we read the push button value
+
+    
     previousLoopMillis = currentMillis;  
     pushButtonValue = digitalRead(pushButtonInputPin);
-    if (pushButtonValue != lastPushButtonValue) {
-       if (pushButtonValue == LOW) { //Button pressed
-            if (ledAreOn) {
-              ledToggleFunction("off");
-            } else {
-              ledToggleFunction("pushOn");
-            }
-        }
-        lastPushButtonValue = pushButtonValue;
-        pushLoopCount = 0; //Register the first pushed loop
-    } else { //Value not changed
-      if (pushButtonValue == LOW) { //Button still pressed
+
+    if(pushButtonValue == lastPushButtonValue && pushButtonValue == LOW) { //Keep press, register in the loop count
         pushLoopCount = pushLoopCount + 1;
-      }
     }
-    if (pushLoopCount > numberOfLoopBeforeWifiSetup) {
+
+    if ((pushButtonValue == HIGH) && (pushLoopCount <= numberOfLoopBeforeLedValueToogle)) { //Button just released and was in the previous status for less than 3 loop 
+        if (whiteValue!= 0) {
+          whiteValue == 0;
+          ledToggleFunction("off");
+        } else {
+          ledToggleFunction("pushOn");
+        }
+        Particle.publish("bla");
+    }
+    
+    if (pushLoopCount > numberOfLoopBeforeLedValueToogle) { // pressed for more than numberOfLoopBeforeLedValueToogle cycle, toogle color
+      whiteValue=0; //Turn off white channel as we just turned it on
+      toogleColor();
+    }
+    
+    if (pushLoopCount > numberOfLoopBeforeWifiSetup) { // pressed for more than numberOfLoopBeforeWifiSetup cycle, start wifi config
       Oak.rebootToConfig(); 
+    }
+
+    if (pushButtonValue != lastPushButtonValue) { //Pressed status changed, reset loop counter
       pushLoopCount = 0;
     }
+    lastPushButtonValue = pushButtonValue;
   }
 }
+
+
+#define MAX_INTENSITY 8
+#define MIN_INTENSITY 0
+#define MAX_TARGETCOLOR 7
+
+int targetColor = 1;
+int nIntensity = 0;
+int nDirection = 1;         // When direction is 1 we fade towards the color (fade IN)
+                            // when 0 we fade towards black (fade OUT)
+
+  void toogleColor() {
+        // Update the intensity value
+        if (nDirection) {
+            // Direction is positive, fading towards the color
+            if (++nIntensity >= MAX_INTENSITY) {
+                // Maximum intensity reached
+                nIntensity = MAX_INTENSITY;  // Just in case
+                nDirection = 0;             // Now going to fade OUT
+            } // else : nothing to do
+        } else {
+            if (--nIntensity <= MIN_INTENSITY) {
+                nIntensity = MIN_INTENSITY; // Just in case
+                // When we get back to black, find the next target color
+                if (++targetColor>MAX_TARGETCOLOR) 
+                    targetColor=1;          // We'll skip fading in and out of black
+                nDirection = 1;             // Now going to fade IN
+            } // else: nothing to do
+        }
+
+        // Compute the colors
+        int colors[3];
+        for (int i=0;i<3;i++) {
+            // If the corresponding bit in targetColor is set, it's part of the target color
+            colors[i] = (targetColor & (1<<i)) ? (1<<nIntensity) -1 : 0;
+        }
+
+        // Set the color
+        //setColor(colors[0], colors[1], colors[2]);
+        redValue=colors[0];
+        greenValue=colors[1];
+        blueValue=colors[2];
+        setPresetValueToOutput();
+        // Wait
+        delay(10);
+        }
 
 
 
