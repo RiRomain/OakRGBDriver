@@ -98,6 +98,7 @@ int ledToggleFunction(String command) {
     else if (command=="pushOn") {
       whiteValue = 200;
         analogWrite(whiteLedPin, getWhiteValue(whiteValue));
+        analogWrite(ledPin, getWhiteValue(whiteValue));
         return 1;
     }
     else {
@@ -256,8 +257,6 @@ int nDirection = 1;         // When direction is 1 we fade towards the color (fa
         greenValue=colors[1];
         blueValue=colors[2];
         setPresetValueToOutput();
-        // Wait
-        delay(10);
         }
 
 
