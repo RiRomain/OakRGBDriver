@@ -9,6 +9,7 @@
 
 int ledPin = 1;       // choose the pin for the status LED (Oak on-board LED)
 int pushButtonInputPin = 10;   // choose the input pin (for a pushbutton)
+int sensitiveButtonInputPin = 5; // choose the input pin (for a sensitive button with reserve input)
 
 int redLedPin = 8;    //choose the pin for the RED LED channel
 int greenLedPin = 7;  //choose the pin for the GREEN LED channel
@@ -27,7 +28,9 @@ int intensity = 200;      //Start with an intensity of 200 to avoid having to re
 int maxIntensity = 1023;  //Max output for the PWM, 
 
 int pushButtonValue = 0;       // variable for the actual push button status
+int sensitiveButtonValue = 0;       // variable for the actual push button status
 int lastPushButtonValue = 0;   // variable for the previous push button value
+int lastSensitiveButtonValue = 1;   // variable for the previous sensitive button value
 
 /*
  * Output value calculation
@@ -157,7 +160,8 @@ void setup() {
   pinMode(blueLedPin, OUTPUT);    // Initialize the RGB_BLUE_LED pin as an output
   pinMode(whiteLedPin, OUTPUT);   // Initialize the RGB_WHITE_LED pin as an output
   pinMode(pushButtonInputPin, INPUT);          //Initialize the input push button
-  
+  pinMode(sensitiveButtonInputPin, INPUT);          //Initialize the input push button
+
   Particle.function("led", ledToggleFunction);  // "led" function to turn the led on or off
   Particle.function("value", setValue);         // "value" function to set the led value
   Particle.function("intensity", setIntensity); // "intensity" function to set the led intensity
@@ -168,6 +172,7 @@ void setup() {
   Particle.variable("inten", intensity);        // "inten" variable representing the led intensity (on 255)
   setPresetValueToOutput();
   lastPushButtonValue = digitalRead(pushButtonInputPin);
+  lastSensitiveButtonValue = digitalRead(sensitiveButtonInputPin);
 }
 
 //Time storage is preffered over pause function to create a delay, avoiding by this way to slow down the rest of the execution
@@ -186,12 +191,18 @@ void loop() {
     
     previousLoopMillis = currentMillis;  
     pushButtonValue = digitalRead(pushButtonInputPin);
+    sensitiveButtonValue = digitalRead(sensitiveButtonInputPin);
 
-    if(pushButtonValue == lastPushButtonValue && pushButtonValue == LOW) { //Keep press, register in the loop count
+    if((pushButtonValue == lastPushButtonValue && pushButtonValue == LOW)
+    || (sensitiveButtonValue == lastSensitiveButtonValue && sensitiveButtonValue == HIGH)) { //Keep press, register in the loop count
         pushLoopCount = pushLoopCount + 1;
     }
 
-    if ((pushButtonValue == HIGH) && (pushLoopCount <= numberOfLoopBeforeLedValueToogle) && (pushButtonValue != lastPushButtonValue)) { //Button just released and was in the previous status for less than 3 loop 
+    if (
+      ((pushButtonValue == HIGH) && (sensitiveButtonValue == LOW))
+    && (pushLoopCount <= numberOfLoopBeforeLedValueToogle)
+    && ((pushButtonValue != lastPushButtonValue) || (sensitiveButtonValue != lastSensitiveButtonValue))
+    ) { //Button just released and was in the previous status for less than 3 loop 
         if (whiteValue!= 0) {
           ledToggleFunction("off");
         } else {
@@ -208,10 +219,11 @@ void loop() {
       Oak.rebootToConfig(); 
     }
 
-    if (pushButtonValue != lastPushButtonValue) { //Pressed status changed, reset loop counter
+    if ((pushButtonValue != lastPushButtonValue) || (sensitiveButtonValue != lastSensitiveButtonValue)) { //Pressed status changed, reset loop counter
       pushLoopCount = 0;
     }
     lastPushButtonValue = pushButtonValue;
+    lastSensitiveButtonValue = sensitiveButtonValue;
   }
 }
 
