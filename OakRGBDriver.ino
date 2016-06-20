@@ -3,7 +3,7 @@
   Control an RGB PWM driver from a Digistump OAK board.
 */
 
-#include <RGBLib.h>
+#include "RGBLib/RGBLib.h"
 
 /*****************************************************************
   USER SETTINGS: You can redefine the different output in this part.
