@@ -1,0 +1,6 @@
+RGB	KEYWORD1
+turnOn	KEYWORD2
+turnWhiteOn	KEYWORD2
+turnOff	KEYWORD2
+setIntensity	KEYWORD2
+next	KEYWORD2
